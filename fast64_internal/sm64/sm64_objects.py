@@ -834,12 +834,16 @@ def process_sm64_objects(obj, area, rootMatrix, transformMatrix, specialsOnly):
         else:
             if obj.sm64_obj_type == "Object":
                 modelID = obj.sm64_model_enum if obj.sm64_model_enum != "Custom" else obj.sm64_obj_model
+                if obj.sm64_model_enum != "Custom" and obj.addExtendedModel:
+                    modelID = "E_" + modelID
                 modelID = handleRefreshDiffModelIDs(modelID)
                 behaviour = (
                     convert_addr_to_func(obj.sm64_behaviour_enum)
                     if obj.sm64_behaviour_enum != "Custom"
                     else obj.sm64_obj_behaviour
                 )
+                if obj.sm64_behaviour_enum != "Custom" and obj.addIdBehavior:
+                    behaviour = "id_" + behaviour
                 if obj.sm64_behaviour_enum == "14000002":
                     area.objects.append(
                         SM64_Object(
@@ -1225,11 +1229,15 @@ class SM64ObjectPanel(bpy.types.Panel):
             prop_split(box, obj, "sm64_model_enum", "Model")
             if obj.sm64_model_enum == "Custom":
                 prop_split(box, obj, "sm64_obj_model", "Model ID")
+            else:
+                prop_split(box, obj, "addExtendedModel", "Add E_ prefix")
             box.operator(SearchModelIDEnumOperator.bl_idname, icon="VIEWZOOM")
             box.box().label(text="Model IDs defined in include/model_ids.h.")
             prop_split(box, obj, "sm64_behaviour_enum", "Behaviour")
             if obj.sm64_behaviour_enum == "Custom":
                 prop_split(box, obj, "sm64_obj_behaviour", "Behaviour Name")
+            else:
+                prop_split(box, obj, "addIdBehavior", "Add id_ prefix")
             box.operator(SearchBehaviourEnumOperator.bl_idname, icon="VIEWZOOM")
             behaviourLabel = box.box()
             behaviourLabel.label(text="Behaviours defined in include/behaviour_data.h.")
@@ -2965,6 +2973,9 @@ def sm64_obj_register():
 
     bpy.types.Object.sm64_model_enum = bpy.props.EnumProperty(name="Model", items=enumModelIDs)
 
+    bpy.types.Object.addExtendedModel = bpy.props.BoolProperty(name="Add E_ prefix", default=False)
+    bpy.types.Object.addIdBehavior = bpy.props.BoolProperty(name="Add id_ prefix", default=False)
+
     bpy.types.Object.sm64_macro_enum = bpy.props.EnumProperty(name="Macro", items=enumMacrosNames)
 
     bpy.types.Object.sm64_special_enum = bpy.props.EnumProperty(name="Special", items=enumSpecialsNames)
@@ -3132,6 +3143,8 @@ def sm64_obj_register():
 
 def sm64_obj_unregister():
     del bpy.types.Object.sm64_model_enum
+    del bpy.types.Object.addExtendedModel
+    del bpy.types.Object.addIdBehavior
     del bpy.types.Object.sm64_macro_enum
     del bpy.types.Object.sm64_special_enum
     del bpy.types.Object.sm64_behaviour_enum
